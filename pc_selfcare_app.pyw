@@ -10,6 +10,7 @@ import os
 import json
 import datetime
 import sys
+import urllib.request
 
 # Try importing OpenCV for Advanced AI Vision & Real-time Red Box Tracking
 try:
@@ -18,6 +19,10 @@ try:
     OPENCV_AVAILABLE = True
 except ImportError:
     OPENCV_AVAILABLE = False
+
+# 🌐 ඔබගේ නිවැරදි GitHub Raw සබැඳි (Cloud URLs)
+REMOTE_VERSION_URL = "https://github.com/deepikanilmini123-ai/my-pc-care-app/blob/main/version.json"
+REMOTE_CODE_URL = "https://github.com/deepikanilmini123-ai/my-pc-care-app/blob/main/pc_selfcare_app.pyw"
 
 # Safe AppData Directory to 100% prevent Permission Denied errors
 USER_DATA_DIR = os.path.join(os.environ.get("APPDATA", os.path.expanduser("~")), "KVNPCCareHub")
@@ -31,7 +36,7 @@ CONFIG_FILE = os.path.join(USER_DATA_DIR, "kvnpc_version.json")
 class KVNPCCareHub:
     def __init__(self, root):
         self.root = root
-        self.root.title("KVNPC CARE - Professional Pro Hub (v3.6)")
+        self.root.title("KVNPC CARE - Cloud Professional Hub")
         self.root.geometry("1000x820")
         
         # Modern Pro Dark Theme Palette (Slate & Neon Cyan)
@@ -49,9 +54,9 @@ class KVNPCCareHub:
         except:
             pass
         
-        # Professional Version Control
-        self.latest_version = "v3.6 Professional"
+        # Version Control
         self.current_version = self.load_current_version()
+        self.latest_version = self.current_version # Will be fetched from server
 
         # Custom ttk Notebook Styling
         style = ttk.Style()
@@ -64,7 +69,7 @@ class KVNPCCareHub:
         # Header Title Banner
         header_frame = tk.Frame(root, bg=self.card_color, padx=15, pady=10)
         header_frame.pack(fill="x", padx=10, pady=10)
-        self.header_label = tk.Label(header_frame, text=f"⚡ KVNPC CARE - Professional Hub ({self.current_version})", font=("Segoe UI", 12, "bold"), bg=self.card_color, fg=self.accent_color)
+        self.header_label = tk.Label(header_frame, text=f"⚡ KVNPC CARE - Cloud Hub ({self.current_version})", font=("Segoe UI", 12, "bold"), bg=self.card_color, fg=self.accent_color)
         self.header_label.pack(anchor="w")
         
         # Notebook Tabs
@@ -95,6 +100,9 @@ class KVNPCCareHub:
         self.background_thread.start()
         
         self.update_live_stats()
+        
+        # Background Online Version Check on Startup
+        threading.Thread(target=self.check_remote_version_background, daemon=True).start()
 
     def load_current_version(self):
         try:
@@ -118,6 +126,18 @@ class KVNPCCareHub:
         except Exception as e:
             messagebox.showerror("Error", f"Failed to save version config: {str(e)}")
             return False
+
+    def check_remote_version_background(self):
+        """Checks online server for the latest version json."""
+        try:
+            req = urllib.request.Request(REMOTE_VERSION_URL, headers={'User-Agent': 'Mozilla/5.0'})
+            with urllib.request.urlopen(req, timeout=5) as response:
+                data = json.loads(response.read().decode())
+                remote_ver = data.get("version")
+                if remote_ver:
+                    self.latest_version = remote_ver
+        except:
+            self.latest_version = self.current_version
 
     def setup_status_tab(self):
         frame = tk.Frame(self.tab_status, bg=self.card_color, padx=20, pady=20)
@@ -161,23 +181,17 @@ class KVNPCCareHub:
         
         tk.Button(btn_frame, text="මකන්න (Reset)", bg="#64748b", fg="#ffffff", font=("Segoe UI", 9, "bold"), relief="flat", padx=10, pady=5, command=self.reset_water).pack(side=tk.LEFT, padx=5)
 
-        if self.current_version == "v2.5":
-            self.test_lock_btn.config(state=tk.DISABLED, bg="#475569")
-            tk.Label(frame, text="⚠️ අගුලු දමා ඇත: අලුත් Pro විශේෂාංග ක්‍රියාත්මක කිරීමට කරුණාකර 'Update & Startup' ටැබ් එකට ගොස් නවතම යාවත්කාලීන කිරීම (Update v3.6) ස්ථාපනය කරන්න!", font=("Segoe UI", 9, "bold"), bg=self.card_color, fg="#f59e0b", wraplength=900, justify="left").pack(anchor="w", pady=5)
-
     def setup_new_features_tab(self):
         frame = tk.Frame(self.tab_new_features, bg=self.card_color, padx=20, pady=20)
         frame.pack(fill='both', expand=True, padx=10, pady=10)
 
         tk.Label(frame, text="🔥 ප්‍රොෆෙഷണල් සජීවී විශේෂාංග 5 (Pro Features)", font=("Segoe UI", 12, "bold"), bg=self.card_color, fg=self.accent_color).pack(anchor="w", pady=5)
 
-        # 1. Active Window Focus Tracker
         win_frame = tk.LabelFrame(frame, text=" 1. 🖥️ Active Window Focus Tracker ", bg=self.card_color, fg="#38bdf8", font=("Segoe UI", 10, "bold"), padx=10, pady=10)
         win_frame.pack(fill="x", pady=5)
         self.active_win_label = tk.Label(win_frame, text="നിലവിലെ ඇප් එක පරීක්ෂා කරමින්...", font=("Consolas", 9), bg=self.card_color, fg=self.text_color)
         self.active_win_label.pack(anchor="w")
 
-        # 2. Large File Finder (>50MB)
         file_frame = tk.LabelFrame(frame, text=" 2. 🗂️ C: Drive Large File Scanner (>50MB) ", bg=self.card_color, fg="#38bdf8", font=("Segoe UI", 10, "bold"), padx=10, pady=10)
         file_frame.pack(fill="x", pady=5)
         file_btn_box = tk.Frame(file_frame, bg=self.card_color)
@@ -188,7 +202,6 @@ class KVNPCCareHub:
         self.large_file_output.pack(fill="x", pady=5)
         self.large_file_output.insert(tk.END, "මෙහි C ඩ්‍රයිව් එකේ ඉඩ වැඩිපුර ගන්නා විශාල ෆයිල්ස් පෙන්වනු ඇත...\n")
 
-        # 3. Pomodoro Focus Timer
         pomo_frame = tk.LabelFrame(frame, text=" 3. ⏱️ Pomodoro Deep Work Focus Timer ", bg=self.card_color, fg="#38bdf8", font=("Segoe UI", 10, "bold"), padx=10, pady=10)
         pomo_frame.pack(fill="x", pady=5)
         
@@ -232,10 +245,6 @@ class KVNPCCareHub:
         threading.Thread(target=run_scan, daemon=True).start()
 
     def start_pomodoro(self):
-        if self.current_version == "v2.5":
-            messagebox.showwarning("Update Required", "මෙම විශේෂාංගය අගුලු දමා ඇත! කරුණාකර ඇප් එක අප්ඩේට් කරන්න.")
-            return
-        
         self.pomo_running = True
         def countdown():
             seconds = 25 * 60
@@ -255,12 +264,8 @@ class KVNPCCareHub:
         self.pomo_status_label.config(text="තත්ත්වය: නැවැත්වී ඇත (Idle) - 25:00")
 
     def trigger_fullscreen_lockdown(self):
-        if self.current_version == "v2.5":
-            messagebox.showwarning("Update Required", "මෙම විශේෂාංගය අගුලු දමා ඇත! කරුණාකර පළමුව 'Update & Startup' ටැබ් එකෙන් ඇප් එක යාවත්කාලීන කරන්න.")
-            return
-
         if not OPENCV_AVAILABLE:
-            messagebox.showerror("OpenCV Required", "AI පද්ධතියේ කැමරා ට්‍රැකිං සඳහා OpenCV (`pip install opencv-python`) අවශ්‍ය වේ!")
+            messagebox.showerror("OpenCV Required", "AI පද්ධතියේ කැමරා ට්‍රැකිං සඳහා OpenCV අවශ්‍ය වේ!")
             return
 
         lock_win = tk.Toplevel(self.root)
@@ -274,7 +279,7 @@ class KVNPCCareHub:
         center_frame.place(relx=0.5, rely=0.5, anchor="center")
 
         tk.Label(center_frame, text="🚨 KVNPC CARE - FULLSCREEN HEALTH LOCKDOWN!", font=("Segoe UI", 16, "bold"), bg="#1e293b", fg="#ef4444").pack(pady=10)
-        tk.Label(center_frame, text="සෞඛ්‍යාරක්ෂාව වෙනුවෙන් පරිගණකය සම්පූර්ණයෙන්ම අගුලු දමා ඇත!\nවතුර බෝතලයක් හෝ වීදුරුවක් අල්ලාගෙන කැමරාව ඉදිරියට වන්න.\n(AI පද්ධතිය මඟින් සජීවී රතු කොටුවෙන් ඔබව ට්‍රැක් කර බීම තහවුරු කළ යුතුය)", font=("Segoe UI", 11), bg="#1e293b", fg="#f8fafc", justify="center").pack(pady=15)
+        tk.Label(center_frame, text="සෞඛ්‍යාරක්ෂාව වෙනුවෙන් පරිගණකය සම්පූර්ණයෙන්ම අගුලු දමා ඇත!\nවතුර බෝතලයක් හෝ වීදුරුවක් අල්ලාගෙන කැමරාව ඉදිරියට වන්න.", font=("Segoe UI", 11), bg="#1e293b", fg="#f8fafc", justify="center").pack(pady=15)
 
         status_var = tk.StringVar(value="කැමරාව ක්‍රියාත්මක වේ... රතු කොටුව මඟින් ට්‍රැක් කරමින් පවතී ⏳")
         tk.Label(center_frame, textvariable=status_var, font=("Segoe UI", 11, "bold"), bg="#1e293b", fg="#06b6d4").pack(pady=15)
@@ -316,9 +321,6 @@ class KVNPCCareHub:
                             cv2.putText(frame, "AI Tracking: Water Container & Action", (x, max(y-10, 20)), 
                                         cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 255), 2)
 
-                    cv2.putText(frame, "KVNPC CARE AI Vision - Drinking Verification Active", (30, 40), 
-                                cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 255), 2)
-                    
                     cv2.imshow("KVNPC CARE - Real-time Red Box Tracking", frame)
                     if cv2.waitKey(1) & 0xFF == ord('q'):
                         break
@@ -408,23 +410,61 @@ class KVNPCCareHub:
         self.tool_output.insert(tk.END, f"⏱️ පද්ධතිය ඔන් කළ වෙලාව (Boot Time): {boot_time}\n")
         self.tool_output.insert(tk.END, f"🌐 ක්‍රියාකාරී ජාල අතුරුමුහුණත් (Active NICs): {', '.join(active_nics)}\n")
 
+    def check_server_connection(self):
+        """Manually test connection to the GitHub server (Connect Server button)."""
+        try:
+            req = urllib.request.Request(REMOTE_VERSION_URL, headers={'User-Agent': 'Mozilla/5.0'})
+            with urllib.request.urlopen(req, timeout=5) as response:
+                if response.status == 200:
+                    messagebox.showinfo("🔗 Server Connected", "✅ සර්වර් එක (GitHub) සමඟ සාර්ථකව සම්බන්ධ විය!")
+                else:
+                    messagebox.showwarning("⚠️ Connection Warning", f"සර්වර් ප්‍රතිචාර කේතය (Status Code): {response.status}")
+        except Exception as e:
+            messagebox.showerror("❌ Connection Failed", f"සර්වර් එක සමඟ සම්බන්ධ වීම අසාර්ථකයි:\n{str(e)}")
+
+    def check_server_status_info(self):
+        """Displays detailed Server Status in a message box."""
+        try:
+            req = urllib.request.Request(REMOTE_VERSION_URL, headers={'User-Agent': 'Mozilla/5.0'})
+            with urllib.request.urlopen(req, timeout=5) as response:
+                data = json.loads(response.read().decode())
+                srv_ver = data.get("version", "Unknown")
+                messagebox.showinfo("📊 Server Status", f"🌐 Server Status: ONLINE ✅\n\n• Server URL: GitHub Raw\n• Latest Server Version: {srv_ver}\n• Current App Version: {self.current_version}")
+        except Exception as e:
+            messagebox.showerror("📊 Server Status", f"🌐 Server Status: OFFLINE / ERROR ❌\n\nවිස්තර:\n{str(e)}")
+
     def check_for_kvnpc_updates(self):
+        """Checks online server for updates and performs cloud download."""
+        try:
+            req = urllib.request.Request(REMOTE_VERSION_URL, headers={'User-Agent': 'Mozilla/5.0'})
+            with urllib.request.urlopen(req, timeout=5) as response:
+                data = json.loads(response.read().decode())
+                remote_ver = data.get("version")
+                if remote_ver and remote_ver != self.current_version:
+                    self.latest_version = remote_ver
+                    self.run_cloud_update_download()
+                    return
+        except Exception as e:
+            messagebox.showerror("Connection Error", f"සර්වර් එක හා සම්බන්ධ වීමේ දෝෂය:\n{str(e)}")
+            return
+
         if self.current_version == self.latest_version:
             messagebox.showinfo("✅ Up to Date", f"ඔබ පාවිච්චි කරන්නේ KVNPC CARE හි නවතම සංස්කරණයයි!\n\n(Current Version: {self.current_version})")
         else:
-            self.run_professional_update()
+            self.run_cloud_update_download()
 
-    def run_professional_update(self):
+    def run_cloud_update_download(self):
+        """Downloads the new .pyw script directly from the remote server (Cloud) and replaces it."""
         update_win = tk.Toplevel(self.root)
-        update_win.title("KVNPC Professional Update Studio")
+        update_win.title("KVNPC Cloud Update Studio")
         update_win.geometry("480x280")
         update_win.configure(bg=self.card_color)
         update_win.resizable(False, False)
         update_win.grab_set()
 
-        tk.Label(update_win, text=f"🚀 Installing KVNPC Update ({self.latest_version})", font=("Segoe UI", 11, "bold"), bg=self.card_color, fg=self.accent_color).pack(pady=15)
+        tk.Label(update_win, text=f"🚀 Downloading Cloud Update...", font=("Segoe UI", 11, "bold"), bg=self.card_color, fg=self.accent_color).pack(pady=15)
         
-        status_var = tk.StringVar(value="යාවත්කාලීන කිරීම සකස් කරමින් පවතී...")
+        status_var = tk.StringVar(value="සර්වර් එකෙන් නවතම කෝඩ් එක බාගත කරමින්...")
         status_label = tk.Label(update_win, textvariable=status_var, font=("Segoe UI", 9), bg=self.card_color, fg=self.sub_text)
         status_label.pack(pady=5)
 
@@ -435,43 +475,47 @@ class KVNPCCareHub:
         percent_label = tk.Label(update_win, textvariable=percent_var, font=("Segoe UI", 10, "bold"), bg=self.card_color, fg="#34d399")
         percent_label.pack(pady=2)
 
-        def process_update():
-            steps = [
-                (25, "සර්වර් පැකේජය බාගත කරමින්..."),
-                (55, "පරණ කෑෂ් සහ තාවකාලික ෆයිල්ස් පිරිසිදු කරමින්..."),
-                (85, "ප්‍රොෆෙഷണල් ලොජික් සහ විශේෂාංග ස්ථාපනය කරමින්..."),
-                (100, "ස්ථාපනය සාර්ථකයි! ඇප් එක යළි ආරම්භ වේ...")
-            ]
-            
-            for p_val, text in steps:
-                time.sleep(0.6)
-                progress['value'] = p_val
-                percent_var.set(f"{p_val}%")
-                status_var.set(text)
-
-            time.sleep(0.5)
-            
-            # Save version permanently to AppData config file
-            self.save_version_config(self.latest_version)
-
-            update_win.destroy()
-            messagebox.showinfo("🎉 Update Completed!", f"KVNPC CARE සාර්ථකව {self.latest_version} වෙත යාවත්කාලීන විය!\nසියලුම ප්‍රබල විශේෂාංග දැන් අන්ලොක් වී ඇත.")
-            
-            python_w = sys.executable.replace("python.exe", "pythonw.exe")
-            if not os.path.exists(python_w):
-                python_w = sys.executable
-                
-            script_path = os.path.abspath(__file__)
-            script_dir = os.path.dirname(script_path)
-            
+        def download_thread():
             try:
-                subprocess.Popen([python_w, script_path], cwd=script_dir)
-            except:
-                subprocess.Popen([sys.executable, script_path], cwd=script_dir)
+                progress['value'] = 30
+                percent_var.set("30%")
+                status_var.set("සර්වර් එකෙන් කෝඩ් ෆයිල් එක ඩවුන්ලෝඩ් වේ...")
                 
-            os._exit(0)
+                req = urllib.request.Request(REMOTE_CODE_URL, headers={'User-Agent': 'Mozilla/5.0'})
+                with urllib.request.urlopen(req, timeout=10) as response:
+                    new_code_content = response.read()
 
-        threading.Thread(target=process_update, daemon=True).start()
+                progress['value'] = 70
+                percent_var.set("70%")
+                status_var.set("පරණ කෝඩ් එක මත නව කෝඩ් එක සේව් කරමින්...")
+
+                script_path = os.path.abspath(__file__)
+                with open(script_path, "wb") as f:
+                    f.write(new_code_content)
+
+                progress['value'] = 100
+                percent_var.set("100%")
+                status_var.set("අප්ඩේට් කිරීම සාර්ථකයි! ඇප් එක රීස්ටාර්ට් වේ...")
+
+                time.sleep(0.8)
+                self.save_version_config(self.latest_version)
+
+                update_win.destroy()
+                messagebox.showinfo("🎉 Cloud Update Successful!", "KVNPC CARE සාර්ථකව අන්තර්ජාලයෙන් යාවත්කාලීන විය!\nනව විශේෂාංග අන්ලොක් කිරීමට ඇප් එක දැන් ස්වයංක්‍රීයව රීස්ටාර්ට් වේ.")
+                
+                python_w = sys.executable.replace("python.exe", "pythonw.exe")
+                if not os.path.exists(python_w):
+                    python_w = sys.executable
+                    
+                script_dir = os.path.dirname(script_path)
+                subprocess.Popen([python_w, script_path], cwd=script_dir)
+                os._exit(0)
+
+            except Exception as err:
+                update_win.destroy()
+                messagebox.showerror("Update Failed", f"ඔන්ලයින් අප්ඩේට් කිරීමේදී දෝෂයක් ඇති විය:\n{str(err)}")
+
+        threading.Thread(target=download_thread, daemon=True).start()
 
     def setup_ai_tab(self):
         frame = tk.Frame(self.tab_ai, bg=self.card_color, padx=15, pady=15)
@@ -524,21 +568,23 @@ class KVNPCCareHub:
         frame = tk.Frame(self.tab_service, bg=self.card_color, padx=15, pady=15)
         frame.pack(fill='both', expand=True, padx=10, pady=10)
         
-        tk.Label(frame, text=f"⚙️ Update & Version Control ({self.current_version})", font=("Segoe UI", 11, "bold"), bg=self.card_color, fg=self.accent_color).pack(anchor="w", pady=5)
+        tk.Label(frame, text=f"⚙️ Cloud Update & Version Control ({self.current_version})", font=("Segoe UI", 11, "bold"), bg=self.card_color, fg=self.accent_color).pack(anchor="w", pady=5)
         
         status_info = f"• Current Version: {self.current_version}\n" \
-                      f"• Latest Version: {self.latest_version}\n\n"
-                      
-        if self.current_version == "v2.5":
-            status_info += "⚠️ තත්ත්වය: නව යාවත්කාලීන කිරීමක් (Update v3.6 Professional) ලැබී ඇත! සියලුම විශේෂාංග අන්ලොක් කිරීමට පහත බොත්තම ඔබන්න."
-        else:
-            status_info += "✅ තත්ත්වය: ඇප් එක නවතම සංස්කරණයට යාවත්කාලීන වී ඇත. සියලුම විශේෂාංග සක්‍රීයයි!"
+                      f"• Server Latest Version: {self.latest_version}\n\n" \
+                      "✅ මෙම ක්‍රමය මඟින් වෙනත් ඕනෑම ලැප්ටොප් එකක ඇති ඇප් එක, අන්තර්ජාලය හරහා ස්වයංක්‍රීයව නවතම කෝඩ් එක ඩවුන්ලෝඩ් කරගෙන අප්ඩේට් වේ!"
 
         tk.Label(frame, text=status_info, font=("Segoe UI", 10), bg=self.card_color, justify="left", fg=self.text_color).pack(anchor="w", pady=10)
 
-        tk.Button(frame, text="🔄 Check for KVNPC Updates (Install v3.6)", bg=self.accent_color, fg="#000000", font=("Segoe UI", 9, "bold"), relief="flat", padx=12, pady=8, command=self.check_for_kvnpc_updates).pack(anchor="w", pady=10)
+        # 🎛️ මෙහි ඔබ ඉල්ලා සිටි ප්‍රධාන බටන් සියල්ල එකතු කර ඇත
+        btn_box = tk.Frame(frame, bg=self.card_color)
+        btn_box.pack(anchor="w", pady=10)
 
-        tips = "• Windows Startup එකට එකතු කරගන්නා ආකාරය:\n" \
+        tk.Button(btn_box, text="🔄 Check for Updates", bg=self.accent_color, fg="#000000", font=("Segoe UI", 9, "bold"), relief="flat", padx=10, pady=6, command=self.check_for_kvnpc_updates).pack(side=tk.LEFT, padx=5)
+        tk.Button(btn_box, text="🌐 Connect Server", bg="#2563eb", fg="#ffffff", font=("Segoe UI", 9, "bold"), relief="flat", padx=10, pady=6, command=self.check_server_connection).pack(side=tk.LEFT, padx=5)
+        tk.Button(btn_box, text="📊 Server Status", bg="#10b981", fg="#000000", font=("Segoe UI", 9, "bold"), relief="flat", padx=10, pady=6, command=self.check_server_status_info).pack(side=tk.LEFT, padx=5)
+
+        tips = "\n• Windows Startup එකට එකතු කරගන්නා ආකාරය:\n" \
                "  1. කීබෝඩ් එකේ `Win + R` ඔබන්න, `shell:startup` ලෙස ටයිප් කර Enter කරන්න.\n" \
                "  2. විවෘත වන ෆෝල්ඩරයට ඔබේ ඇප් ෂෝට්කට් එක දමා ගන්න."
         tk.Label(frame, text=tips, font=("Segoe UI", 9), bg=self.card_color, justify="left", fg=self.sub_text).pack(anchor="w", pady=15)
