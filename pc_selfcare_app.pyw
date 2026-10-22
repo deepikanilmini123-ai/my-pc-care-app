@@ -21,8 +21,8 @@ except ImportError:
     OPENCV_AVAILABLE = False
 
 # 🌐 ඔබගේ නිවැරදි GitHub Raw සබැඳි (Cloud URLs)
-REMOTE_VERSION_URL = "https://github.com/deepikanilmini123-ai/my-pc-care-app/blob/main/version.json"
-REMOTE_CODE_URL = "https://github.com/deepikanilmini123-ai/my-pc-care-app/blob/main/pc_selfcare_app.pyw"
+REMOTE_VERSION_URL = "https://raw.githubusercontent.com/deepikanilmini123-ai/my-pc-care-app/refs/heads/main/version.json"
+REMOTE_CODE_URL = "https://raw.githubusercontent.com/deepikanilmini123-ai/my-pc-care-app/refs/heads/main/pc_selfcare_app.pyw"
 
 # Safe AppData Directory to 100% prevent Permission Denied errors
 USER_DATA_DIR = os.path.join(os.environ.get("APPDATA", os.path.expanduser("~")), "KVNPCCareHub")
